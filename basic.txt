@@ -1,0 +1,6 @@
+############# BASH 
+
+
+variable as command -> var=$(<command here>) or var=`<command here>`
+
+access variable -> $var
