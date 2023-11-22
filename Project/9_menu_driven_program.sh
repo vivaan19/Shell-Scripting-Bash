@@ -83,7 +83,7 @@ case $ANSWER in
 	[bB])
 		return_two_num
 
-                echo "Success: Substraction of ${num1} and ${num2} is $(( ${num1} - ${num2}  ))"
+                echo "Success: Substraction of ${num1} and ${num2} is $(( ${num2} - ${num1}  ))"
                 ;;
 	[cC])
                 return_two_num
