@@ -1,0 +1,15 @@
+Random Password generator : 
+
+This tool is used by many websites to have a secure password recomendation to the user 
+
+Key Features of this bash script : 
+
+- Asks the user for password length and how many password to generate with input data validation 
+
+- Asks the user for the different password encryption methods including OPENSSL, and URANDOM 
+
+- Input data validation for trailing and leading whitespaces 
+
+- Properly formatted output
+
+- Option to add password to a .txt file 

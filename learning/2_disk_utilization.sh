@@ -37,8 +37,10 @@ checkMountSystem() {
 
 	if [ $usage_level -lt 80 ]; then
 		echo "Usage level is below 80%"
+		echo Usage level : $usage_level%
 	elif [ $usage_level -gt 80 ]; then
 		echo "Usage level is higher than 80%"
+		echo Usage level : $usage_level%
 	else
 		echo "Something went wrong"
 	fi

@@ -1,11 +1,16 @@
 #!/bin/bash 
 
-########## This bash scripts accepts directory path and lists the files inside that in a more nicer way 
+########## 1. This bash scripts accepts directory path and lists the files inside that in a more nicer way
+########## 2. Sort the files decending as well as acending --- if $2 is dec or asc 
 
 
 checkIfDir(){
-	
 
+	if [ "$1" == "" ]; then
+		echo "Invalid Parameter"
+		exit 1
+	fi
+	
 	is_file_err=$(file $1 2> /dev/null)  
 	
 	if [ $? = 0 ]; then	
@@ -38,4 +43,5 @@ if [ $? = 0 ]; then
 	done
 else 
 	echo Invalid Path
+	exit 1
 fi
