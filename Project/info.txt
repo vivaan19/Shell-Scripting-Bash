@@ -1,0 +1,10 @@
+ldd command -- 
+
+ldd command will list list all libs that are dependent on an execulatable or binary 
+
+ldd <path_to_binary>
+
+ldd /bin/ls 
+
+all library will be in /lib 
+
