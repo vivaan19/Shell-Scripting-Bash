@@ -1,0 +1,51 @@
+PROJECT DOCUMENTATION ::: 
+
+PROJECT NAME ::: RANDOM PASSWORD GENERATOR 
+
+Project Description ::: 
+
+This is a menu driven shell script project written in bash, which solves the problem of generating 
+random strong password using three different password generation methods. viz, openssl base 64, openssl hex and 
+linux random /dev/urandom which provides string of pseudo-random streams. 
+
+Input Parameters ::: 
+
+Password Length - Determine the Length of Password to generate 
+Password Number - How many number of password to generate 
+Password Method - Determine which method is used for password generation 
+
+Function Description ::: 
+
+For data validation 
+
+Function name ::: 
+
+dataValidation() 
+
+This function is used to validate data for missing input and integer value inputs (regex matching)
+
+Arguments : $1 - 'd' or 'nd' : d means default validation of 2 parameters 
+: nd means non-default validation of 1 parameter
+: $2, $3 - parameters for missing values and integer input 
+
+
+Function Description ::: 
+
+For Password generation 
+
+Function name ::: 
+
+generatePasswd() 
+
+This function is used to generate password based upon password method, number of passwords, and length of password 
+
+Arguments : $1 - y or n - if passwd wants to be saved in a text file or not 
+          : $2 - Number of password 
+          : $3 - Length of password 
+          : $4 - Method of password 
+
+Output ::: 
+
+If user selected to store passwords in a text file then -- passwd.txt 
+
+Else : The details will be displayed at the screen 
