@@ -1,0 +1,35 @@
+PROJECT DOCUMENTATION ::: 
+
+PROJECT NAME ::: SERVICE CRAWLER 
+
+PROJECT DESCRIPTION ::: 
+
+This is an argument based shell script in which user must enter directory path from "/" the script will 
+scan for all service file in the directory and check the status as active. 
+
+The script will list all active service and their destination path. 
+
+INPUT PARAMETERS ::: 
+    
+    - Directories (in the command line arguments)
+
+FUNCTION DESCRIPTION ::: 
+
+- validations()
+
+Used to validate the arguments passed ; mainly used to check number of parameters should exceed 0 
+and used to initialize all_active_service.txt file 
+
+Arguments ::: $1 - Number of arguments ($#) 
+              $2 - Destination path for all_active_service.txt which is $HOME/all_active_service.txt   
+ 
+- serviceChecker()
+
+Used to check if systemd folder exists in the directory specified ; if exists then it will list all active service
+and path to $HOME/all_active_service.txt 
+
+Arguments ::: $1 - name of the / directory from user command line arguments 
+
+Output ::: 
+
+$HOME/all_active_service.txt file which can be blank or filled with active services and its path 
