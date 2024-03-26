@@ -1,5 +1,12 @@
 #!/bin/bash 
 
+##################################################################
+# Author ::: Vivaan Shiromani 
+# GitHib ::: Vivaan19 
+# Date   ::: 26/03/2024 
+# About  ::: MENU DRIVEN - PASSWORD GENERATOR BY VARIOUS METHODS 
+###################################################################
+
 # PASSWORD GENERATOR BY VARIOUS METHODS 
 # INPUT PASSWORD LENGTH, NUMBER OF PASSWORD REQURIED and PASSWORD METHOD REQUIRED 
 
