@@ -172,6 +172,10 @@ webSetup() {
     sudo rm -rf /var/www/html/*
 
     # download the code to /var/www/html 
+    echo "###################### CLONE CODE"
+    
+    echo 
+    
     sudo git clone https://github.com/kodekloudhub/learning-app-ecommerce.git /var/www/html/
 
     # Now replace all the database connection details in index.php file 
