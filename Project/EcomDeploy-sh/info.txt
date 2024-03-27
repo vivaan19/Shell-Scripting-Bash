@@ -1,0 +1,31 @@
+PROJECT NAME ::: EcomDeploy.sh 
+
+PROJECT DESCRIPTION ::: 
+
+Multi-OS (Debian + Ubuntu) script used to deploy LAMP stack E-Commerce application. 
+
+PROJECT STEPS ::: 
+
+1. Install and enable firewalld service (Used to add various ports)
+
+2. Install and enable httpd/Apache2 service 
+
+3. Add port 80 tcp to firewalld using firewall-cmd 
+
+4. Install and enable MariaDB or mysql service
+
+5. Configure database by creating a ecomm user on localhost and grant all priviledges 
+
+6. Load product inventory sql file into db 
+
+7. Add db port to firewalld 
+
+8. Install and configure php php-mysql service
+
+9. Clone the code repository from git to /var/www/html 
+
+10. Change <DirectoryIndex> file from index.html to index.php ( not required in debian ubuntu )
+
+11. In index.php file change sql connect from an ip address to localhost as db is setup in the localhost 
+
+12. Restart the db service, httpd service to have changes 
