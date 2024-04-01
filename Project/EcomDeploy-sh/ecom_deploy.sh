@@ -3,7 +3,7 @@
 ###############################################################################################
 # Author ::: Vivaan Shiromani 
 # Date   ::: 27/03/2024
-# About  ::: Multi-os (apt and yum) localhost LAMP stack E-commerce application deployment script 
+# About  ::: Multi-os (apt and yum) localhost LAMP stack 3-tier E-commerce application deployment script 
 #################################################################################################
 
 DEBIAN_PKG_LST=(git firewalld apache2 mysql-server php php-mysql)
