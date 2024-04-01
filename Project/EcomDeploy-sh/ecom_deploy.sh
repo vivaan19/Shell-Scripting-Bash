@@ -8,11 +8,11 @@
 
 # Todo --- See about the exit into functions with return if needed ; and test the script into VM's 
 
-DEBIAN_PKG_LST="git firewalld apache2 mysql-server php php-mysql -y"
-CENTOS_PKG_LST="git firewalld httpd mariadb-server php php-mysqlnd -y" 
+DEBIAN_PKG_LST=(git firewalld apache2 mysql-server php php-mysql)
+CENTOS_PKG_LST=(git firewalld httpd mariadb-server php php-mysqlnd) 
 
-DEBIAN_SERVICE_LST="firewalld apache2 mysql"
-CENTOS_SERVICE_LST="firewalld httpd mariadb"
+DEBIAN_SERVICE_LST=(firewalld apache2 mysql)
+CENTOS_SERVICE_LST=(firewalld httpd mariadb)
 
 PORT_ARR=(80 3306)
 
@@ -21,17 +21,28 @@ DB_HOST="localhost"
 checkServicePort() {
 
     if [ "$1" == "s" ]; then
-        
-        if ! sudo systemctl start "$2" && sudo systemctl enable "$2"; then 
 
-            echo "ERROR: SERVICES NOT ABLE TO START OR ENABLE" 
-            exit 1
-        fi
+        # local service_arr=("$@")
+
+        local -n service_arr="$2" 
+
+        for ser in "${service_arr[@]}"; do
+        
+            if ! sudo systemctl start "$ser" && sudo systemctl enable "$ser"; then 
+
+                echo "ERROR: SERVICE - $ser NOT ABLE TO START OR ENABLE" 
+                exit 1
+            fi
+        done
 
     elif [ "$1" == "p" ]; then
-
+        
+        # This will take whole argument as an array : (p 80 3306) like this 
         # declare local array ("$@") will capture all elements  
-        local port_arr=("$@") 
+        # local port_arr=("$@") 
+
+        # take reference of array ; if modified here it will get modified outside of the function also 
+        local -n port_arr="$2"
 
         # take port one-by-one using ${arr_name[@]} synatx 
         for port in "${port_arr[@]}"; do
@@ -49,82 +60,132 @@ checkServicePort() {
 
 }
 
-checkPackage() {
+checkPackage() { 
 
-    if ! sudo "$1" update &> /dev/null &&  sudo "$1" upgrade &> /dev/null; then 
+    echo "INFO ####################### UPDATING SYSTEM"
+    if ! sudo "$1" update &> /dev/null && sudo "$1" upgrade -y &> /dev/null; then 
 
         echo "ERROR: UPDATING SYSTEM"
         exit 1
     fi
 
     # Installing required packages 
-    if ! sudo "$1" install "$2" &> /dev/null; then 
+    # local pkg_arr=("$@")
+    
+    echo "INFO ####################### INSTALLING PACKAGES"
+    # take reference of array 
+    local -n pkg_arr=$2 
 
-        echo "ERROR: INSTALLING PACKAGES"
-        exit 1 
-    fi
+    for pkg in "${pkg_arr[@]}"; do
 
+        if ! sudo "$1" install "$pkg" -y; then 
+
+            echo "ERROR: INSTALLING PACKAGE - $pkg"
+            exit 1 
+        fi
+    done
+
+}
+
+dbCommand() {
+
+    if [ "$1" == "db_sql_commands" ]; then 
+ 
+cat > "$1".sql <<-EOF 
+    CREATE DATABASE $2;
+    CREATE USER '$3'@'$DB_HOST' IDENTIFIED BY '$4';
+    GRANT ALL PRIVILEGES ON *.* TO '$3'@'$DB_HOST';
+    FLUSH PRIVILEGES;
+EOF
+
+elif [ "$1" == "db_load_script" ]; then
+
+cat > "$1".sql <<-EOF
+    USE $2;
+    CREATE TABLE products (id mediumint(8) unsigned NOT NULL auto_increment,Name varchar(255) default NULL,Price varchar(255) default NULL, ImageUrl varchar(255) default NULL,PRIMARY KEY (id)) AUTO_INCREMENT=1;
+    INSERT INTO products (Name,Price,ImageUrl) VALUES ("Laptop","100","c-1.png"),("Drone","200","c-2.png"),("VR","300","c-3.png"),("Tablet","50","c-5.png"),("Watch","90","c-6.png"),("Phone Covers","20","c-7.png"),("Phone","80","c-8.png"),("Laptop","150","c-4.png");
+EOF
+
+fi
+
+    sudo cat "$1".sql | mysql
+    es=$? 
+    
+    if [ $es -ne 0 ]; then 
+        echo "ERROR: IN $1 sql file"
+        exit 1
+    else 
+        echo "INFO #################### SQL COMMANDS DONE"
+        # sudo rm "$1".sql
+    
+    fi 
 }
 
 databaseConfig() {
 
-    read -p -r "Enter Datbase Username: " DB_USER
-    read -p -r "Enter Database Name: " DB_NAME 
-    
-    echo -n "Enter Database Password: " 
-    read -s -r DB_PASSWD
+    while true; do
+        
+        read -rp "Enter Datbase Username: " DB_USER
+        
+        if_exists=$(sudo mysql -sN -e "SELECT COUNT(*) FROM mysql.user WHERE User = '${DB_USER}'")
+        
+        # Check if database user already exists - if count of the user is 1 then the user exists 
+        if [[ $if_exists -lt 1 ]]; then
 
-    # SQL Commands to load into mysql 
+            echo "INFO ############## DATBASE USER DOES NOT EXIST" 
 
-cat > db_sql_commands.sql <<-EOF 
-CREATE DATABASE $DB_NAME;
-CREATE USER '$DB_USER'@'$DB_HOST' IDENTIFIED BY '$DB_PASSWD';
-GRANT ALL PRIVILEGES ON *.* TO '$DB_USER'@'$DB_HOST';
-FLUSH PRIVILEGES;
-EOF
+            read -rp "Enter Database Name: " DB_NAME 
+            read -rsp "Enter Database Password: " DB_PASSWD
+        
+            dbCommand "db_sql_commands" "$DB_NAME" "$DB_USER" "$DB_PASSWD" 
+            dbCommand "db_load_script" "$DB_NAME" "$DB_USER" "$DB_PASSWD" 
+            
+            break
 
+        else 
+            echo "ERROR DATBASE USER EXISTS : CREATE A NEW USER FIRST" 
+        fi
+
+    done
+     
     # here pipe statements cannot have a single exit code so pipestatus array variable is used to 
     # seperate command exit codes one-by-one 
 
-    if ! sudo cat db_sql_commands.sql | mysql; then
-
-        if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-                echo "ERROR: Failed to read database script"
-        
-            elif [[ ${PIPESTATUS[1]} -ne 0 ]]; then
-
-                echo "ERROR: Failed to execute MySQL command"
-        fi
-
-        exit 1
-    else
-
-        # Load Product Inventory Information to database
-        sudo rm db_sql_commands.sql 
-
-cat > db-load-script.sql <<-EOF
-USE ecomdb;
-CREATE TABLE products (id mediumint(8) unsigned NOT NULL auto_increment,Name varchar(255) default NULL,Price varchar(255) default NULL, ImageUrl varchar(255) default NULL,PRIMARY KEY (id)) AUTO_INCREMENT=1;
-INSERT INTO products (Name,Price,ImageUrl) VALUES ("Laptop","100","c-1.png"),("Drone","200","c-2.png"),("VR","300","c-3.png"),("Tablet","50","c-5.png"),("Watch","90","c-6.png"),("Phone Covers","20","c-7.png"),("Phone","80","c-8.png"),("Laptop","150","c-4.png");
-EOF
+    # Load Product Inventory Information to database
 
         # PIPESTATUS array has all exit codes for each command in the pipe 
-        if ! sudo cat db-load-script.sql | mysql; then
+    #     if ! sudo cat db-load-script.sql | mysql; then
         
-            if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-                echo "ERROR: Failed to read product db script"
+    #         if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+    #             echo "ERROR: Failed to read product db script"
         
-            elif [[ ${PIPESTATUS[1]} -ne 0 ]]; then
+    #         elif [[ ${PIPESTATUS[1]} -ne 0 ]]; then
 
-                echo "ERROR: Failed to execute product MySQL db command"
+    #             echo "ERROR: Failed to execute product MySQL db command"
+    #         fi
+    #         exit 1
+        
+    #     fi
+
+}
+
+serviceRestart() {
+
+    if [ $1 == "apt" ]; then
+
+        if ! sudo systemctl restart apache2; then
+
+            echo "ERROR: ALL PROCESS DONE BUT NOT ABLE TO RESTART APACHE2 SERVICE"
+            exit1 
         fi
-            exit 1
-        
+
+    elif [ $1 == "yum" ]; then
+        if ! sudo systemctl restart httpd; then
+
+            echo "ERROR: ALL PROCESS DONE BUT NOT ABLE TO RESTART HTTPD SERVICE"
+            exit1 
         fi
-
-
     fi
-
 
 }
 
@@ -137,20 +198,20 @@ webSetup() {
         echo "INFO: APT BASED LAMP STACK E-COMMERCE APP INSTALLATION"
 
         # Update and Upgrade system 
-        checkPackage "$1" "$DEBIAN_PKG_LST"
+        checkPackage "apt" DEBIAN_PKG_LST
         
         # Check Start and Enable Services  
-        checkServicePort "s" "$DEBIAN_SERVICE_LST" 
+        checkServicePort "s" DEBIAN_SERVICE_LST
     
     elif [ "$1" == "yum" ]; then
         
         echo "INFO: YUM BASED LAMP STACK E-COMMERCE APP INSTALLATION"
 
         # Update and Upgrade system 
-        checkPackage "$1" "$CENTOS_PKG_LST"
+        checkPackage "yum" CENTOS_PKG_LST
         
         # Check Start and Enable Services  
-        checkServicePort "s" "$CENTOS_SERVICE_LST"
+        checkServicePort "s" CENTOS_SERVICE_LST
 
         # Change DirectoryIndex index.html to DirectoryIndex index.php to make the php page the default page
         sudo sed -i 's/index.html/index.php/g' /etc/httpd/conf/httpd.conf
@@ -162,7 +223,7 @@ webSetup() {
     # Allow ports to firewall using firewall-cmd
     # apache2 - 80 ; mysql - 3306  
     # passing array into function 
-    checkServicePort "p" "${PORT_ARR[@]}"
+    checkServicePort "p" PORT_ARR
     # Port have been successfully added to firewalld 
 
     # Now create new ecommerce user, database, password, on localhost ask necessary details 
@@ -171,35 +232,44 @@ webSetup() {
     # delete any folders and file in /var/www/html 
     sudo rm -rf /var/www/html/*
 
+    echo 
     # download the code to /var/www/html 
     echo "###################### CLONE CODE"
     
     echo 
     
-    sudo git clone https://github.com/kodekloudhub/learning-app-ecommerce.git /var/www/html/
+    sudo git clone https://github.com/kodekloudhub/learning-app-ecommerce.git
 
-    # Now replace all the database connection details in index.php file 
-
-    sudo sed -i 's///$link = mysqli_connect('172.20.1.101', 'ecomuser', 'ecompassword', 'ecomdb');/$link = mysqli_connect('$DB_HOST', '"$DB_USER"', '"$DB_PASSWD"', '"$DB_NAME"')/g' /var/www/html/index.php
-
-    sudo sed -i 's/$dbHost = getenv('DB_HOST');/ //$dbHost = getenv('DB_HOST');/g' /var/www/html/index.php
-
-    sudo sed -i 's/$dbUser = getenv('DB_USER');/ //$dbUser = getenv('DB_USER');/g' /var/www/html/index.php
-
-    sudo sed -i 's/$dbPassword = getenv('DB_PASSWORD');/ //$dbPassword = getenv('DB_PASSWORD');/g' /var/www/html/index.php
-
-    sudo sed -i 's/$dbName = getenv('DB_NAME');/ //$dbName = getenv('DB_NAME');/g' /var/www/html/index.php
+    sudo cp -r learning-app-ecommerce/* /var/www/html
     
-    sudo sed -i 's/$link = mysqli_connect($dbHost, $dbUser, $dbPassword, $dbName);/ //$link = mysqli_connect($dbHost, $dbUser, $dbPassword, $dbName);/g' /var/www/html/index.php
+    sudo rm -rf learning-app-ecommerce
 
+    PHP_FNAME="/var/www/html/index.php"
+
+    if [ -f "$PHP_FNAME" ]; then
+
+        # first comment the strings 
+                
+        sudo sed -i "s#\$link = mysqli_connect(\$dbHost, \$dbUser, \$dbPassword, \$dbName);#//#g" $PHP_FNAME 
+        sudo sed -i "s#\$dbHost#//\$dbHost#g"  $PHP_FNAME
+        sudo sed -i "s#\$dbUser#//\$dbUser#g"  $PHP_FNAME
+        sudo sed -i "s#\$dbPassword#//\$dbPassword#g"  $PHP_FNAME
+        sudo sed -i "s#\$dbName#//\$dbName#g"  $PHP_FNAME
+        sudo sed -i "s#// \$link = mysqli_connect('172.20.1.101', 'ecomuser', 'ecompassword', 'ecomdb')#\$link('$DB_HOST', '$DB_USER', '$DB_PASSWD', '$DB_NAME')#g" $PHP_FNAME
+        
+
+        
+    fi
 }
 
 
 if apt --help &> /dev/null; then 
     
     webSetup "apt"
+    serviceRestart "apt" 
 
 else
     webSetup "yum"
+    serviceRestart "yum" 
 
 fi
