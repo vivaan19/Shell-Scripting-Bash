@@ -20,13 +20,20 @@ DB_HOST="localhost"
 
 checkServicePort() {
 
-    if [ "$1" == "s" ]; then
+    func_type=$1
+    
+    shift
+    
+    arr=("$@")
+
+    if [ "$func_type" == "s" ]; then
 
         # local service_arr=("$@")
 
-        local -n service_arr="$2" 
+        # local -n service_arr="$2"  will not work for bash version upto 4 
 
-        for ser in "${service_arr[@]}"; do
+
+        for ser in "${arr[@]}"; do
         
             if ! sudo systemctl start "$ser" && sudo systemctl enable "$ser"; then 
 
@@ -35,17 +42,17 @@ checkServicePort() {
             fi
         done
 
-    elif [ "$1" == "p" ]; then
+    elif [ "$func_type" == "p" ]; then
         
         # This will take whole argument as an array : (p 80 3306) like this 
         # declare local array ("$@") will capture all elements  
         # local port_arr=("$@") 
 
         # take reference of array ; if modified here it will get modified outside of the function also 
-        local -n port_arr="$2"
+        # local -n port_arr="$2" 
 
         # take port one-by-one using ${arr_name[@]} synatx 
-        for port in "${port_arr[@]}"; do
+        for port in "${arr[@]}"; do
 
             if ! firewall-cmd --permanent --zone=public --add-port="$port"/tcp; then 
 
@@ -62,8 +69,10 @@ checkServicePort() {
 
 checkPackage() { 
 
+    pkg_name=$1
+
     echo "INFO ####################### UPDATING SYSTEM"
-    if ! sudo "$1" update &> /dev/null && sudo "$1" upgrade -y &> /dev/null; then 
+    if ! sudo "$pkg_name" update -y &> /dev/null && sudo "$pkg_name" upgrade -y &> /dev/null; then 
 
         echo "ERROR: UPDATING SYSTEM"
         exit 1
@@ -74,11 +83,18 @@ checkPackage() {
     
     echo "INFO ####################### INSTALLING PACKAGES"
     # take reference of array 
-    local -n pkg_arr=$2 
+
+    # Todo --- local -n error in centos 
+
+    shift
+
+    # local -n pkg_arr=$2 local -n is not used in bash version upto 4         
+    
+    pkg_arr=("$@")        
 
     for pkg in "${pkg_arr[@]}"; do
 
-        if ! sudo "$1" install "$pkg" -y; then 
+        if ! sudo "$pkg_name" install "$pkg" -y; then 
 
             echo "ERROR: INSTALLING PACKAGE - $pkg"
             exit 1 
@@ -198,20 +214,20 @@ webSetup() {
         echo "INFO: APT BASED LAMP STACK E-COMMERCE APP INSTALLATION"
 
         # Update and Upgrade system 
-        checkPackage "apt" DEBIAN_PKG_LST
+        checkPackage "apt" ${DEBIAN_PKG_LST[@]}
         
         # Check Start and Enable Services  
-        checkServicePort "s" DEBIAN_SERVICE_LST
+        checkServicePort "s" ${DEBIAN_SERVICE_LST[@]}
     
     elif [ "$1" == "yum" ]; then
         
         echo "INFO: YUM BASED LAMP STACK E-COMMERCE APP INSTALLATION"
 
         # Update and Upgrade system 
-        checkPackage "yum" CENTOS_PKG_LST
+        checkPackage "yum" ${CENTOS_PKG_LST[@]}
         
         # Check Start and Enable Services  
-        checkServicePort "s" CENTOS_SERVICE_LST
+        checkServicePort "s" ${CENTOS_SERVICE_LST[@]}
 
         # Change DirectoryIndex index.html to DirectoryIndex index.php to make the php page the default page
         sudo sed -i 's/index.html/index.php/g' /etc/httpd/conf/httpd.conf
@@ -223,7 +239,7 @@ webSetup() {
     # Allow ports to firewall using firewall-cmd
     # apache2 - 80 ; mysql - 3306  
     # passing array into function 
-    checkServicePort "p" PORT_ARR
+    checkServicePort "p" ${PORT_ARR[@]}
     # Port have been successfully added to firewalld 
 
     # Now create new ecommerce user, database, password, on localhost ask necessary details 
