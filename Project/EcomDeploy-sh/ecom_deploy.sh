@@ -3,10 +3,8 @@
 #####################################################################################
 # Author ::: Vivaan Shiromani 
 # Date   ::: 27/03/2024
-# About  ::: Multi-os localhost LAMP stack E-commerce application deployment script 
+# About  ::: Multi-os (apt and yum) localhost LAMP stack E-commerce application deployment script 
 ######################################################################################
-
-# Todo --- See about the exit into functions with return if needed ; and test the script into VM's 
 
 DEBIAN_PKG_LST=(git firewalld apache2 mysql-server php php-mysql)
 CENTOS_PKG_LST=(git firewalld httpd mariadb-server php php-mysqlnd) 
