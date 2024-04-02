@@ -156,18 +156,18 @@ fi
         exit 1
     else 
         echo "INFO #################### SQL COMMANDS DONE"
-        # sudo rm "$1".sql
+        sudo rm "$1".sql
     
     fi 
 }
 
-####################
-# This function configures the database by creating user, database and password 
-# This function calls dbCommand function 
+#######################################################################################################
+# This function configures the database by reading input for user name, database and password 
+# This function calls dbCommand function before performing validations for database and user existance 
 # It has a while loop which gives users chance to re-enter new user name and database name 
 
 # Args :: None 
-####################
+#######################################################################################################
 databaseConfig() {
 
     while true; do
@@ -351,8 +351,17 @@ webSetup() {
 
 # Multi-os setup for apt based and yum based os 
 if apt --help &> /dev/null; then 
+    
     webSetup "apt"
     serviceRestart "apt" 
+
+    # Check the status code 
+    code=$(curl -Is localhost | grep HTTP | cut -d " " -f2)
+    if [ $code -eq 200 ]; then
+        echo "Status Code of application is 200 website successfully hosted"
+    else 
+        echo "Status Code of application is $code website hosting as some-problems"
+    fi
 
 else
     webSetup "yum"
