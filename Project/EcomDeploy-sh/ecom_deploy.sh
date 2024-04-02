@@ -6,6 +6,8 @@
 # About  ::: Multi-os (apt and yum) localhost LAMP stack 3-tier E-commerce application deployment script 
 #################################################################################################
 
+# todo -- Check the time of update and upgrade for the system if it is less than or equal to 1min then its not needed 
+
 DEBIAN_PKG_LST=(git firewalld apache2 mysql-server php php-mysql)
 CENTOS_PKG_LST=(git firewalld httpd mariadb-server php php-mysqlnd) 
 
